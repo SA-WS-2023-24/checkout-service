@@ -65,10 +65,10 @@
             <scope>annotationProcessor</scope>
         </dependency>
         <dependency>
-            <groupId>com.stripe</groupId>
-            <artifactId>stripe-java</artifactId>
-            <version>22.13.0</version>
-        </dependency>
+			<groupId>com.paypal.sdk</groupId>
+			<artifactId>checkout-sdk</artifactId>
+			<version>2.0.0</version>
+		</dependency>
     </dependencies>
 
     <build>

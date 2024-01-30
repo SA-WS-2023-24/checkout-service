@@ -1,0 +1,38 @@
+# spring-boot-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: checkout-service
+  template:
+    metadata:
+      labels:
+        app: checkout-service
+    spec:
+      containers:
+        - name: checkout-service
+          image: pcpartsshop/checkout-service:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: STRIPE_API_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: checkout-config
+                  key: stripe-api-key
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/postgres
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: postgres
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq
+            - name: SPRING_RABBITMQ_PORT
+              value: "5672"
+          ports:
+            - containerPort: 8080
