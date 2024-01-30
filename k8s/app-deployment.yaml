@@ -1,5 +1,3 @@
-# spring-boot-deployment.yaml
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,13 +17,8 @@ spec:
           image: pcpartsshop/checkout-service:latest
           imagePullPolicy: IfNotPresent
           env:
-            - name: STRIPE_API_KEY
-              valueFrom:
-                configMapKeyRef:
-                  name: checkout-config
-                  key: stripe-api-key
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:postgresql://postgres:5432/postgres
+              value: jdbc:postgresql://postgres-checkout:5432/postgres
             - name: SPRING_DATASOURCE_USERNAME
               value: postgres
             - name: SPRING_DATASOURCE_PASSWORD

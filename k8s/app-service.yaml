@@ -1,0 +1,15 @@
+# spring-boot-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout-service
+spec:
+  selector:
+    app: checkout-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30010
+  type: NodePort

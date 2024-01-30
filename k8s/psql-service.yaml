@@ -1,0 +1,12 @@
+# postgres-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-checkout
+spec:
+  selector:
+    app: postgres-checkout
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

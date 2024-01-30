@@ -1,0 +1,13 @@
+apiVersion: skaffold/v4beta8
+kind: Config
+metadata:
+  name: checkout-service
+build:
+  artifacts:
+    - image: pcpartsshop/checkout-service
+      docker:
+        dockerfile: Dockerfile
+  local: {}
+manifests:
+  rawYaml:
+    - k8s/*
