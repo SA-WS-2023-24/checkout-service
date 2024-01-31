@@ -26,4 +26,9 @@ public class CheckoutController {
     public CompletedOrder completePayment(@RequestParam String token) {
         return paypalService.completePayment(token);
     }
+
+    @GetMapping(value = "/order/{id}")
+    public String orderDetails(@PathVariable String id) {
+        return paypalService.orderDetails(id);
+    }
 }

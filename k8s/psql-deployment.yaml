@@ -51,4 +51,4 @@ spec:
       volumes:
         - name: postgres-persistance-storage
           persistentVolumeClaim:
-            claimName: postgres-pv-claim
+            claimName: checkout-pvc

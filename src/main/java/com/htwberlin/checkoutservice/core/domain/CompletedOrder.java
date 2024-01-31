@@ -12,6 +12,7 @@ import lombok.Setter;
 public class CompletedOrder {
     private String status;
     private String payId;
+    private String orderId;
 
     public CompletedOrder(String status) {
         this.status = status;
