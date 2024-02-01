@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### PayPal Secrets ###
+k8s/paypal-config.yaml

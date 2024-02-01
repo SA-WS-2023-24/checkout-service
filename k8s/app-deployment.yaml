@@ -27,5 +27,15 @@ spec:
               value: rabbitmq
             - name: SPRING_RABBITMQ_PORT
               value: "5672"
+            - name: paypal.clientId
+              valueFrom:
+                configMapKeyRef:
+                  name: checkout-paypal-config
+                  key: paypal-client-id
+            - name: paypal.secret
+              valueFrom:
+                configMapKeyRef:
+                  name: checkout-paypal-config
+                  key: paypal-client-secret
           ports:
             - containerPort: 8080
