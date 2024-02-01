@@ -13,19 +13,19 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
-    public static final String CREATE_CHECKOUT_QUEUE = "create_checkout";
+    public static final String REMOVE_BASKET_QUEUE= "delete_basket";
 
-    public static final String CHECKOUT_EXCHANGE = "checkout_exchange";
+    public static final String BASKET_EXCHANGE = "basket_exchange";
 
 
     @Bean
-    public Queue createCheckoutQueue() {
-        return new Queue(CREATE_CHECKOUT_QUEUE,false);
+    public Queue deleteBasketQueue() {
+        return new Queue(REMOVE_BASKET_QUEUE,false);
     }
 
     @Bean
-    public TopicExchange checkoutTopicExchange() {
-        return new TopicExchange(CHECKOUT_EXCHANGE);
+    public TopicExchange basketTopicExchange() {
+        return new TopicExchange(BASKET_EXCHANGE);
     }
 
     @Bean
@@ -35,11 +35,11 @@ public class RabbitMQConfig {
 
     @Bean
     public Binding bindCreateCheckoutQueue(TopicExchange exchange) {
-        return BindingBuilder.bind(createCheckoutQueue()).to(exchange).with("checkout.create");
+        return BindingBuilder.bind(deleteBasketQueue()).to(exchange).with("basket.delete");
     }
 
     @Bean
-    public RabbitTemplate productTemplate(ConnectionFactory connectionFactory) {
+    public RabbitTemplate orderTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(messageConverter());
         return template;

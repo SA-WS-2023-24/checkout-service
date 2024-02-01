@@ -18,8 +18,8 @@ public class CheckoutController {
     }
 
     @PostMapping(value = "/init")
-    public PaymentOrder createPayment(@RequestParam BigDecimal sum) {
-        return paypalService.createPayment(sum);
+    public PaymentOrder createPayment(@RequestParam BigDecimal sum, String basketId) {
+        return paypalService.createPayment(sum, basketId);
     }
 
     @PostMapping(value = "/capture")

@@ -1,16 +1,14 @@
 package com.htwberlin.checkoutservice.core.service.impl;
 
-import com.htwberlin.checkoutservice.config.PaypalConfig;
 import com.htwberlin.checkoutservice.core.domain.CompletedOrder;
 import com.htwberlin.checkoutservice.core.domain.PaymentOrder;
+import com.htwberlin.checkoutservice.core.service.interfaces.IOrdersApi;
+import com.htwberlin.checkoutservice.core.service.interfaces.IProducer;
 import com.paypal.core.PayPalHttpClient;
 import com.paypal.http.HttpResponse;
 import com.paypal.orders.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -22,24 +20,27 @@ import java.util.NoSuchElementException;
 @Service
 public class PaypalService {
 
+    private final IProducer messageProducer;
+
     private final PayPalHttpClient payPalHttpClient;
 
-    private final RestTemplate restTemplate;
+    private final IOrdersApi ordersApi;
 
-    public PaypalService(PayPalHttpClient payPalHttpClient, RestTemplate restTemplate) {
+
+    public PaypalService(IProducer messageProducer, PayPalHttpClient payPalHttpClient, IOrdersApi ordersApi) {
+        this.messageProducer = messageProducer;
         this.payPalHttpClient = payPalHttpClient;
-        this.restTemplate = restTemplate;
+        this.ordersApi = ordersApi;
     }
 
     // need shipping cost,
-    public PaymentOrder createPayment(BigDecimal fee) {
+    public PaymentOrder createPayment(BigDecimal fee, String basketId) {
         OrderRequest orderRequest = new OrderRequest();
         orderRequest.checkoutPaymentIntent("CAPTURE");
 
 
 //        AmountWithBreakdown amountBreakdown = new AmountWithBreakdown()
 //                .currencyCode("EUR").value(fee.toString());
-
 
         PurchaseUnitRequest purchaseUnitRequest = new PurchaseUnitRequest().referenceId("PUHF")
                 .description("Sporting Goods").customId("CUST-HighFashions").softDescriptor("HighFashions")
@@ -49,7 +50,7 @@ public class PaypalService {
                                 .handling(new Money().currencyCode("USD").value("10.00"))
                                 .taxTotal(new Money().currencyCode("USD").value("20.00"))
                                 .shippingDiscount(new Money().currencyCode("USD").value("10.00"))))
-                .items(new ArrayList<Item>() {
+                .items(new ArrayList<>() {
                     {
                         add(new Item().name("T-shirt").description("Green XL").sku("sku01")
                                 .unitAmount(new Money().currencyCode("USD").value("90.00"))
@@ -86,6 +87,7 @@ public class PaypalService {
                     .orElseThrow(NoSuchElementException::new)
                     .href();
 
+            messageProducer.publishOrderSuccessfulEvent(basketId);
             return new PaymentOrder("success", order.id(), redirectUrl);
         } catch (IOException e) {
             log.error(e.getMessage());
@@ -94,23 +96,7 @@ public class PaypalService {
     }
 
     public String orderDetails(String orderId) {
-        String url = "https://api.sandbox.paypal.com/v2/checkout/orders/";
-        String clientId = "AY3aeJqfgQiYDgR8QPK4CcUtkG6j26y6zvef3h90JWFZ_setjVnQrwaaqdtlkhNddDRj5ggVZH3ZgGMt";
-        String clientSecret = "EMdUOvZgHvo6qmUEfO4HTNYlOlqa6mq4KuCSZZoZH9yQQ2pixVzYbSG6lyS7DUqDd97DXncKcRpxMBSv";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBasicAuth(clientId, clientSecret);
-        
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<String> responseEntity = restTemplate.exchange(
-                url + orderId,
-                HttpMethod.GET,
-                entity,
-                String.class
-        );
-        return responseEntity.getBody();
+        return ordersApi.getOrderDetails(orderId);
     }
 
     public CompletedOrder completePayment(String token) {
@@ -119,6 +105,7 @@ public class PaypalService {
             HttpResponse<Order> httpResponse = payPalHttpClient.execute(ordersCaptureRequest);
             if (httpResponse.result().status() != null) {
                 String orderId = httpResponse.result().id();
+
                 log.info(orderId);
                 return new CompletedOrder("success", token, orderId);
             }
