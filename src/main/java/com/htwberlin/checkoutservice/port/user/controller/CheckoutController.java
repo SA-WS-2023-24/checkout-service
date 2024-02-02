@@ -1,6 +1,7 @@
 package com.htwberlin.checkoutservice.port.user.controller;
 
 import com.htwberlin.checkoutservice.core.domain.CompletedOrder;
+import com.htwberlin.checkoutservice.core.domain.OrderRequest;
 import com.htwberlin.checkoutservice.core.domain.PaymentOrder;
 import com.htwberlin.checkoutservice.core.service.impl.PaypalService;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +19,8 @@ public class CheckoutController {
     }
 
     @PostMapping(value = "/init")
-    public PaymentOrder createPayment(@RequestParam BigDecimal sum, String basketId) {
-        return paypalService.createPayment(sum, basketId);
+    public PaymentOrder createPayment(@RequestBody OrderRequest orderRequest) {
+        return paypalService.createPayment(orderRequest);
     }
 
     @PostMapping(value = "/capture")

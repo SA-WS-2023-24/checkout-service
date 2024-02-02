@@ -4,6 +4,7 @@ import com.htwberlin.checkoutservice.core.domain.CompletedOrder;
 import com.htwberlin.checkoutservice.core.domain.PaymentOrder;
 import com.htwberlin.checkoutservice.core.service.interfaces.IOrdersApi;
 import com.htwberlin.checkoutservice.core.service.interfaces.IProducer;
+import com.htwberlin.checkoutservice.port.mapper.OrderRequestMapper;
 import com.paypal.core.PayPalHttpClient;
 import com.paypal.http.HttpResponse;
 import com.paypal.orders.*;
@@ -11,8 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -26,46 +25,21 @@ public class PaypalService {
 
     private final IOrdersApi ordersApi;
 
-
     public PaypalService(IProducer messageProducer, PayPalHttpClient payPalHttpClient, IOrdersApi ordersApi) {
         this.messageProducer = messageProducer;
         this.payPalHttpClient = payPalHttpClient;
         this.ordersApi = ordersApi;
     }
 
-    // need shipping cost,
-    public PaymentOrder createPayment(BigDecimal fee, String basketId) {
+    public PaymentOrder createPayment(com.htwberlin.checkoutservice.core.domain.OrderRequest order) {
         OrderRequest orderRequest = new OrderRequest();
         orderRequest.checkoutPaymentIntent("CAPTURE");
 
-
-//        AmountWithBreakdown amountBreakdown = new AmountWithBreakdown()
-//                .currencyCode("EUR").value(fee.toString());
-
         PurchaseUnitRequest purchaseUnitRequest = new PurchaseUnitRequest().referenceId("PUHF")
                 .description("Sporting Goods").customId("CUST-HighFashions").softDescriptor("HighFashions")
-                .amountWithBreakdown(new AmountWithBreakdown().currencyCode("USD").value("220.00")
-                        .amountBreakdown(new AmountBreakdown().itemTotal(new Money().currencyCode("USD").value("180.00"))
-                                .shipping(new Money().currencyCode("USD").value("20.00"))
-                                .handling(new Money().currencyCode("USD").value("10.00"))
-                                .taxTotal(new Money().currencyCode("USD").value("20.00"))
-                                .shippingDiscount(new Money().currencyCode("USD").value("10.00"))))
-                .items(new ArrayList<>() {
-                    {
-                        add(new Item().name("T-shirt").description("Green XL").sku("sku01")
-                                .unitAmount(new Money().currencyCode("USD").value("90.00"))
-                                .tax(new Money().currencyCode("USD").value("10.00")).quantity("1")
-                                .category("PHYSICAL_GOODS"));
-                        add(new Item().name("Shoes").description("Running, Size 10.5").sku("sku02")
-                                .unitAmount(new Money().currencyCode("USD").value("45.00"))
-                                .tax(new Money().currencyCode("USD").value("5.00")).quantity("2")
-                                .category("PHYSICAL_GOODS"));
-                    }
-                })
-                .shippingDetail(new ShippingDetail().name(new Name().fullName("John Doe"))
-                        .addressPortable(new AddressPortable().addressLine1("123 Townsend St").addressLine2("Floor 6")
-                                .adminArea2("San Francisco").adminArea1("CA").postalCode("94107").countryCode("US")));
-        //.amountWithBreakdown(amountBreakdown);
+                .amountWithBreakdown(OrderRequestMapper.orderRequestToAmountWithBreakdown(order))
+                .items(OrderRequestMapper.orderRequestToItems(order))
+                .shippingDetail(OrderRequestMapper.orderRequestToShippingDetail(order));
 
         orderRequest.purchaseUnits(List.of(purchaseUnitRequest));
 
@@ -79,16 +53,16 @@ public class PaypalService {
 
         try {
             HttpResponse<Order> orderHttpResponse = payPalHttpClient.execute(ordersCreateRequest);
-            Order order = orderHttpResponse.result();
+            Order orderResponse = orderHttpResponse.result();
 
-            String redirectUrl = order.links().stream()
+            String redirectUrl = orderResponse.links().stream()
                     .filter(link -> "approve".equals(link.rel()))
                     .findFirst()
                     .orElseThrow(NoSuchElementException::new)
                     .href();
 
-            messageProducer.publishOrderSuccessfulEvent(basketId);
-            return new PaymentOrder("success", order.id(), redirectUrl);
+            messageProducer.publishOrderSuccessfulEvent(order.getBasketId());
+            return new PaymentOrder("success", orderResponse.id(), redirectUrl);
         } catch (IOException e) {
             log.error(e.getMessage());
             return new PaymentOrder("Error");
